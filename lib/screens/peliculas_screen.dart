@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart'; // Importa el paquete
 import '../models/movie_model.dart';
 import '../services/movie_service.dart';
-import 'chewie_player_screen.dart';
+import 'helpers/chewie_player_screen.dart';
 
 class PeliculasScreen extends StatefulWidget {
   const PeliculasScreen({super.key});

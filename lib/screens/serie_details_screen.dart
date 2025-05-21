@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart'; // Importa el paquete
 import '../models/serie_models.dart'; // Importa tus modelos
 import '../services/serie_service.dart'; // Importa tu servicio
-import 'chewie_player_screen.dart';
+import 'helpers/chewie_player_screen.dart';
 
 class SerieDetailsScreen extends StatefulWidget {
   final int serieId;

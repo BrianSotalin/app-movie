@@ -50,7 +50,9 @@ class _ChewiePlayerScreenState extends State<ChewiePlayerScreen> {
             _chewieController != null &&
                     _chewieController!.videoPlayerController.value.isInitialized
                 ? Chewie(controller: _chewieController!)
-                : const CircularProgressIndicator(),
+                : CircularProgressIndicator(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
       ),
     );
   }
