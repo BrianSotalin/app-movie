@@ -8,6 +8,7 @@ import '../models/gender_model.dart';
 import '../services/gender_service.dart';
 import '../shared/widget/no_connection_widget.dart';
 import '../shared/widget/detail_card.dart';
+import '../shared/widget/appbar_menu.dart';
 
 class PeliculasScreen extends StatefulWidget {
   const PeliculasScreen({super.key});
@@ -39,20 +40,11 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
       _updateConnectionStatus,
     );
 
-    // Inicializa _moviesFuture con un futuro vacío o una carga inicial si es necesario,
-    // pero la carga principal se hará después de verificar la conexión.
-    // Si _isConnected es true después de _initConnectivity, llamamos a _fetchMoviesData.
-    // Si no, _moviesFuture podría quedar sin inicializar hasta que haya conexión.
-    // Es mejor inicializarlo aquí con una función que dependa de _isConnected.
     if (_isConnected) {
       _fetchCategories();
 
       _fetchMoviesData();
     } else {
-      // Si no hay conexión al inicio, _moviesFuture puede ser un futuro que ya completó con error
-      // o simplemente no mostrar nada hasta que haya conexión.
-      // Para evitar un error de late initialization, lo asignamos a un futuro que no hará nada
-      // o que ya tiene un error predefinido.
       _moviesFuture = Future.value(
         [],
       ); // O un futuro que resuelva a una lista vacía
@@ -187,8 +179,8 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sortedCategories = [..._categories]
-      ..sort((a, b) => a.name.compareTo(b.name));
+    // final sortedCategories = [..._categories]
+    //   ..sort((a, b) => a.name.compareTo(b.name));
     final abcCategories =
         _categories.where((category) {
             if (_selectedCategory == 'ALL') {
@@ -204,47 +196,15 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
       appBar: AppBar(
         title: const Text('Películas'),
         actions: [
-          PopupMenuButton(
-            icon: const Icon(Icons.more_vert),
-            itemBuilder:
-                (context) => [
-                  PopupMenuItem(
-                    enabled: false,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Filtrar por género',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButton<String>(
-                          value: _selectedCategory,
-                          isExpanded: true,
-                          items:
-                              sortedCategories.map((gender) {
-                                return DropdownMenuItem<String>(
-                                  value: gender.name,
-                                  child: Text(gender.name),
-                                );
-                              }).toList(),
-                          onChanged: (String? newValue) {
-                            if (newValue != null) {
-                              setState(() {
-                                _selectedCategory = newValue;
-
-                                Navigator.pop(context); // Cierra el menú
-                                _filterMovies(); // Aplica el filtro
-                              });
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+          PopupFilterMenu(
+            categories: _categories,
+            selectedCategory: _selectedCategory,
+            onCategorySelected: (newValue) {
+              setState(() {
+                _selectedCategory = newValue;
+                _filterMovies();
+              });
+            },
           ),
         ],
       ),
@@ -260,16 +220,6 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
                       ),
                     );
                   } else if (snapshot.hasError) {
-                    // Podrías tener un error de red (aunque _isConnected lo cubre) u otro error de API
-                    // Si el error es específicamente por falta de conexión (lo cual _isConnected debería prevenir aquí),
-                    // podrías mostrar _buildNoConnectionWidget() también, o un mensaje de error más general.
-                    // Por ahora, mostramos el error genérico si _isConnected es true pero aún hay error.
-                    // print("Error en FutureBuilder: ${snapshot.error}");
-                    // Si el error es específicamente por falta de conexión (que _isConnected debería haber manejado),
-                    // podrías devolver _buildNoConnectionWidget() aquí como fallback.
-                    // O simplemente el mensaje de error que viene del snapshot.
-                    // Si el error es debido a SocketException o similar, es probable que sea un problema de red
-                    // que _isConnected no capturó a tiempo o la llamada falló antes del cambio de estado.
                     if (snapshot.error.toString().contains('SocketException') ||
                         snapshot.error.toString().contains(
                           'Failed host lookup',
@@ -445,27 +395,6 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
                                                             );
                                                           },
                                                         );
-                                                        // return GestureDetector(
-                                                        //   onTap: () {
-                                                        //     Navigator.push(
-                                                        //       context,
-                                                        //       MaterialPageRoute(
-                                                        //         builder:
-                                                        //             (
-                                                        //               context,
-                                                        //             ) => ChewiePlayerScreen(
-                                                        //               videoUrl:
-                                                        //                   movie
-                                                        //                       .url,
-                                                        //               name:
-                                                        //                   movie
-                                                        //                       .title,
-                                                        //             ),
-                                                        //       ),
-                                                        //     );
-                                                        //   },
-
-                                                        // );
                                                       },
                                                     ),
                                                   ),

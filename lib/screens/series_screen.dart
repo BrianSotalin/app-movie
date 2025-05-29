@@ -9,6 +9,7 @@ import '../screens/serie_details_screen.dart';
 import '../models/gender_model.dart';
 import '../services/gender_service.dart';
 import '../shared/widget/detail_card.dart';
+import '../shared/widget/appbar_menu.dart';
 
 class SeriesScreen extends StatefulWidget {
   const SeriesScreen({super.key});
@@ -161,8 +162,6 @@ class _SeriesScreenState extends State<SeriesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sortedCategories = [..._categories]
-      ..sort((a, b) => a.name.compareTo(b.name));
     final abcCategories =
         _categories.where((category) {
             if (_selectedCategory == 'ALL') {
@@ -177,47 +176,15 @@ class _SeriesScreenState extends State<SeriesScreen> {
       appBar: AppBar(
         title: const Text('Series'),
         actions: [
-          PopupMenuButton(
-            icon: const Icon(Icons.more_vert),
-            itemBuilder:
-                (context) => [
-                  PopupMenuItem(
-                    enabled: false,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Filtrar por género',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButton<String>(
-                          value: _selectedCategory,
-                          isExpanded: true,
-                          items:
-                              sortedCategories.map((gender) {
-                                return DropdownMenuItem<String>(
-                                  value: gender.name,
-                                  child: Text(gender.name),
-                                );
-                              }).toList(),
-                          onChanged: (String? newValue) {
-                            if (newValue != null) {
-                              setState(() {
-                                _selectedCategory = newValue;
-
-                                Navigator.pop(context); // Cierra el menú
-                                _filterSeries(); // Aplica el filtro
-                              });
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+          PopupFilterMenu(
+            categories: _categories,
+            selectedCategory: _selectedCategory,
+            onCategorySelected: (newValue) {
+              setState(() {
+                _selectedCategory = newValue;
+                _filterSeries();
+              });
+            },
           ),
         ],
       ),
