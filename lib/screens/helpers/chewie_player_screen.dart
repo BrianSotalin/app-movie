@@ -4,8 +4,13 @@ import 'package:chewie/chewie.dart';
 
 class ChewiePlayerScreen extends StatefulWidget {
   final String videoUrl;
+  final String name;
 
-  const ChewiePlayerScreen({super.key, required this.videoUrl});
+  const ChewiePlayerScreen({
+    super.key,
+    required this.videoUrl,
+    required this.name,
+  });
 
   @override
   State<ChewiePlayerScreen> createState() => _ChewiePlayerScreenState();
@@ -44,7 +49,7 @@ class _ChewiePlayerScreenState extends State<ChewiePlayerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Reproductor')),
+      appBar: AppBar(title: Text(widget.name)),
       body: Center(
         child:
             _chewieController != null &&

@@ -4,6 +4,10 @@ import 'package:connectivity_plus/connectivity_plus.dart'; // Importa el paquete
 import '../models/movie_model.dart';
 import '../services/movie_service.dart';
 import 'helpers/chewie_player_screen.dart';
+import '../models/gender_model.dart';
+import '../services/gender_service.dart';
+import '../shared/widget/no_connection_widget.dart';
+import '../shared/widget/detail_card.dart';
 
 class PeliculasScreen extends StatefulWidget {
   const PeliculasScreen({super.key});
@@ -24,15 +28,7 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
   List<Movie> _filteredMovies = [];
   String _searchQuery = '';
   String _selectedCategory = 'ALL';
-
-  final List<String> _categories = [
-    'ALL',
-    'FAMILIAR',
-    'DRAMA',
-    'ACCION',
-    'TERROR',
-    'COMEDIA',
-  ];
+  List<Gender> _categories = [];
 
   @override
   void initState() {
@@ -49,6 +45,8 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
     // Si no, _moviesFuture podría quedar sin inicializar hasta que haya conexión.
     // Es mejor inicializarlo aquí con una función que dependa de _isConnected.
     if (_isConnected) {
+      _fetchCategories();
+
       _fetchMoviesData();
     } else {
       // Si no hay conexión al inicio, _moviesFuture puede ser un futuro que ya completó con error
@@ -116,6 +114,18 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
     }
   }
 
+  //metodo para cargar generos
+  void _fetchCategories() async {
+    try {
+      final genders = await GenderService().fetchGenders();
+      setState(() {
+        _categories = [Gender(id: 0, name: 'ALL'), ...genders];
+      });
+    } catch (e) {
+      // Puedes mostrar un mensaje o dejar la lista vacía
+    }
+  }
+
   // Método para cargar las películas
   void _fetchMoviesData() {
     if (mounted && _isConnected) {
@@ -175,46 +185,69 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
     });
   }
 
-  Widget _buildNoConnectionWidget() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Icon(
-            Icons.wifi_off, // Logo de no wifi
-            size: 80,
-            color: Theme.of(context).colorScheme.secondary,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Sin conexión a Internet', // Mensaje
-            style: TextStyle(
-              fontSize: 18,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // Intenta recargar los datos o verificar la conexión de nuevo
-              _initConnectivity().then((_) {
-                if (_isConnected) {
-                  _fetchMoviesData();
-                }
-              });
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.white60),
-            child: const Text('Reintentar'),
+  @override
+  Widget build(BuildContext context) {
+    final sortedCategories = [..._categories]
+      ..sort((a, b) => a.name.compareTo(b.name));
+    final abcCategories =
+        _categories.where((category) {
+            if (_selectedCategory == 'ALL') {
+              return category.name != 'ALL';
+            }
+            return category.name == _selectedCategory;
+          }).toList()
+          ..sort(
+            (a, b) => a.name.compareTo(b.name),
+          ); // <-- esta es la línea clave
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Películas'),
+        actions: [
+          PopupMenuButton(
+            icon: const Icon(Icons.more_vert),
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem(
+                    enabled: false,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Filtrar por género',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButton<String>(
+                          value: _selectedCategory,
+                          isExpanded: true,
+                          items:
+                              sortedCategories.map((gender) {
+                                return DropdownMenuItem<String>(
+                                  value: gender.name,
+                                  child: Text(gender.name),
+                                );
+                              }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                _selectedCategory = newValue;
+
+                                Navigator.pop(context); // Cierra el menú
+                                _filterMovies(); // Aplica el filtro
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
           ),
         ],
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Películas')),
       body:
           _isConnected // Comprueba el estado de la conexión aquí
               ? FutureBuilder<List<Movie>>(
@@ -244,7 +277,16 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
                         snapshot.error.toString().toLowerCase().contains(
                           'sin conexión',
                         )) {
-                      return _buildNoConnectionWidget(); // Muestra el widget de no conexión si el error es de red
+                      // return _buildNoConnectionWidget(); // Muestra el widget de no conexión si el error es de red
+                      return NoConnectionWidget(
+                        onRetry: () {
+                          _initConnectivity().then((_) {
+                            if (_isConnected) {
+                              _fetchMoviesData(); // Asegúrate de tener esta función disponible
+                            }
+                          });
+                        },
+                      );
                     }
                     return Center(
                       child: Text(
@@ -257,16 +299,6 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
                       child: Text('No hay películas disponibles.'),
                     );
                   }
-
-                  // Si llegamos aquí, hay conexión y datos (o snapshot.data es una lista vacía procesable)
-                  // _allMovies ya debería estar actualizado por el .then de _moviesFuture,
-                  // o puedes usar snapshot.data directamente.
-                  // Es más seguro usar _allMovies y _filteredMovies que ya se actualizan en setState.
-                  // Si _allMovies no se llena en el .then, usa snapshot.data
-                  // if (_allMovies.isEmpty && snapshot.hasData) {
-                  //   _allMovies = snapshot.data!;
-                  //   _filterMovies(); // Asegúrate de que los filtros se aplican con los nuevos datos
-                  // }
 
                   return RefreshIndicator(
                     onRefresh: () async {
@@ -313,69 +345,7 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
                             ],
                           ),
                         ),
-                        SizedBox(
-                          height: 40,
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children:
-                                  _categories.map((category) {
-                                    final isSelected =
-                                        _selectedCategory == category;
-                                    return GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedCategory = category;
-                                          _filterMovies();
-                                        });
-                                      },
-                                      child: Container(
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color:
-                                              isSelected
-                                                  ? Theme.of(
-                                                    context,
-                                                  ).colorScheme.primary
-                                                  : Theme.of(
-                                                    context,
-                                                  ).colorScheme.secondary,
-                                          borderRadius: BorderRadius.circular(
-                                            15,
-                                          ),
-                                          boxShadow: [
-                                            if (isSelected)
-                                              const BoxShadow(
-                                                color: Colors.black26,
-                                                blurRadius: 4,
-                                                offset: Offset(0, 2),
-                                              ),
-                                          ],
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            category,
-                                            style: TextStyle(
-                                              color:
-                                                  isSelected
-                                                      ? Colors.white
-                                                      : Colors.black87,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                            ),
-                          ),
-                        ),
+
                         const SizedBox(height: 8),
                         Expanded(
                           child:
@@ -388,37 +358,29 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
                                   )
                                   : ListView(
                                     children:
-                                        _categories
-                                            .where(
-                                              (
-                                                category,
-                                              ) => // Solo muestra categorías que tienen películas filtradas
-                                                  _selectedCategory == 'ALL' ||
-                                                  _selectedCategory == category,
-                                            )
+                                        abcCategories
+                                            .where((category) {
+                                              // Si está seleccionado 'ALL', mostramos todas las categorías (excepto 'ALL' misma si existe)
+                                              if (_selectedCategory == 'ALL') {
+                                                return category.name != 'ALL';
+                                              }
+                                              // Solo mostrar la categoría seleccionada
+                                              return category.name ==
+                                                  _selectedCategory;
+                                            })
                                             .map((category) {
                                               final moviesInCategory =
                                                   _filteredMovies
                                                       .where(
                                                         (movie) =>
-                                                            _selectedCategory ==
-                                                                    'ALL'
-                                                                ? movie.gender ==
-                                                                    category
-                                                                : true,
-                                                      )
-                                                      .where(
-                                                        (movie) =>
-                                                            _selectedCategory !=
-                                                                    'ALL'
-                                                                ? movie.gender ==
-                                                                    _selectedCategory
-                                                                : true,
+                                                            movie.gender ==
+                                                            category.name,
                                                       )
                                                       .toList();
 
                                               if (moviesInCategory.isEmpty) {
-                                                return const SizedBox.shrink(); // No muestra nada si no hay películas para esta categoría
+                                                return const SizedBox.shrink();
+                                                // No muestra nada si no hay películas para esta categoría
                                               }
 
                                               return Column(
@@ -432,17 +394,19 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
                                                           vertical: 8,
                                                         ),
                                                     child: Text(
-                                                      category == 'ALL' &&
+                                                      category.name == 'ALL' &&
                                                               _selectedCategory ==
                                                                   'ALL'
                                                           ? "Todas las películas"
-                                                          : category, // Ajuste para cuando 'ALL' está seleccionado
+                                                          : category
+                                                              .name, // Ajuste para cuando 'ALL' está seleccionado
                                                       style:
                                                           Theme.of(context)
                                                               .textTheme
                                                               .titleLarge,
                                                     ),
                                                   ),
+
                                                   SizedBox(
                                                     height: 220,
                                                     child: ListView.builder(
@@ -457,7 +421,11 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
                                                       ) {
                                                         final movie =
                                                             moviesInCategory[index];
-                                                        return GestureDetector(
+                                                        return DetailCard(
+                                                          title: movie.title,
+                                                          coverUrl: movie.cover,
+                                                          gender: movie.gender,
+                                                          year: '${movie.year}',
                                                           onTap: () {
                                                             Navigator.push(
                                                               context,
@@ -469,131 +437,35 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
                                                                       videoUrl:
                                                                           movie
                                                                               .url,
+                                                                      name:
+                                                                          movie
+                                                                              .title,
                                                                     ),
                                                               ),
                                                             );
                                                           },
-                                                          child: Container(
-                                                            width: 140,
-                                                            margin:
-                                                                const EdgeInsets.symmetric(
-                                                                  horizontal: 8,
-                                                                ),
-                                                            child: Stack(
-                                                              children: [
-                                                                ClipRRect(
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        16,
-                                                                      ),
-                                                                  child: Image.network(
-                                                                    movie.cover,
-                                                                    width:
-                                                                        double
-                                                                            .infinity,
-                                                                    height:
-                                                                        double
-                                                                            .infinity,
-                                                                    fit:
-                                                                        BoxFit
-                                                                            .cover,
-                                                                    errorBuilder: (
-                                                                      context,
-                                                                      error,
-                                                                      stackTrace,
-                                                                    ) {
-                                                                      return Container(
-                                                                        color:
-                                                                            Colors.grey[800],
-                                                                        child: const Center(
-                                                                          child: Icon(
-                                                                            Icons.movie_creation_outlined,
-                                                                            color:
-                                                                                Colors.white70,
-                                                                          ),
-                                                                        ),
-                                                                      );
-                                                                    },
-                                                                    loadingBuilder: (
-                                                                      BuildContext
-                                                                      context,
-                                                                      Widget
-                                                                      child,
-                                                                      ImageChunkEvent?
-                                                                      loadingProgress,
-                                                                    ) {
-                                                                      if (loadingProgress ==
-                                                                          null)
-                                                                        return child;
-                                                                      return Center(
-                                                                        child: CircularProgressIndicator(
-                                                                          value:
-                                                                              loadingProgress.expectedTotalBytes !=
-                                                                                      null
-                                                                                  ? loadingProgress.cumulativeBytesLoaded /
-                                                                                      loadingProgress.expectedTotalBytes!
-                                                                                  : null,
-                                                                        ),
-                                                                      );
-                                                                    },
-                                                                  ),
-                                                                ),
-                                                                Positioned(
-                                                                  bottom: 0,
-                                                                  left: 0,
-                                                                  right: 0,
-                                                                  child: Container(
-                                                                    decoration: const BoxDecoration(
-                                                                      color:
-                                                                          Colors
-                                                                              .black54,
-                                                                      borderRadius: BorderRadius.vertical(
-                                                                        bottom:
-                                                                            Radius.circular(
-                                                                              16,
-                                                                            ),
-                                                                      ),
-                                                                    ),
-                                                                    padding:
-                                                                        const EdgeInsets.all(
-                                                                          8,
-                                                                        ),
-                                                                    child: Column(
-                                                                      crossAxisAlignment:
-                                                                          CrossAxisAlignment
-                                                                              .start,
-                                                                      children: [
-                                                                        Text(
-                                                                          movie
-                                                                              .title,
-                                                                          style: const TextStyle(
-                                                                            color:
-                                                                                Colors.white,
-                                                                            fontWeight:
-                                                                                FontWeight.bold,
-                                                                          ),
-                                                                          maxLines:
-                                                                              1,
-                                                                          overflow:
-                                                                              TextOverflow.ellipsis,
-                                                                        ),
-                                                                        Text(
-                                                                          '${movie.gender} • ${movie.year}',
-                                                                          style: const TextStyle(
-                                                                            color:
-                                                                                Colors.white70,
-                                                                            fontSize:
-                                                                                12,
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
                                                         );
+                                                        // return GestureDetector(
+                                                        //   onTap: () {
+                                                        //     Navigator.push(
+                                                        //       context,
+                                                        //       MaterialPageRoute(
+                                                        //         builder:
+                                                        //             (
+                                                        //               context,
+                                                        //             ) => ChewiePlayerScreen(
+                                                        //               videoUrl:
+                                                        //                   movie
+                                                        //                       .url,
+                                                        //               name:
+                                                        //                   movie
+                                                        //                       .title,
+                                                        //             ),
+                                                        //       ),
+                                                        //     );
+                                                        //   },
+
+                                                        // );
                                                       },
                                                     ),
                                                   ),
@@ -608,7 +480,15 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
                   );
                 },
               )
-              : _buildNoConnectionWidget(), // Muestra el widget de "Sin conexión"
+              : NoConnectionWidget(
+                onRetry: () {
+                  _initConnectivity().then((_) {
+                    if (_isConnected) {
+                      _fetchMoviesData(); // Asegúrate de tener esta función disponible
+                    }
+                  });
+                },
+              ), // Muestra el widget de "Sin conexión"
     );
   }
 }

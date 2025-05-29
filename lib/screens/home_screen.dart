@@ -51,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withAlpha((0.1 * 255).round()),
                 borderRadius: BorderRadius.circular(25),
                 // border: Border.all(color: Colors.white.withOpacity(0.3)),
               ),

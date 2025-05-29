@@ -4,6 +4,8 @@ import 'package:connectivity_plus/connectivity_plus.dart'; // Importa el paquete
 import '../models/serie_models.dart'; // Importa tus modelos
 import '../services/serie_service.dart'; // Importa tu servicio
 import 'helpers/chewie_player_screen.dart';
+import '../shared/widget/no_connection_widget.dart';
+import '../shared/widget/detail_card_serie.dart';
 
 class SerieDetailsScreen extends StatefulWidget {
   final int serieId;
@@ -112,59 +114,6 @@ class _SerieDetailsScreenState extends State<SerieDetailsScreen> {
     // No necesitamos lanzar un error específico aquí desde la pantalla.
   }
 
-  // Widget para mostrar cuando no hay conexión
-  Widget _buildNoConnectionWidget() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.wifi_off,
-            size: 80,
-            color:
-                Theme.of(
-                  context,
-                ).colorScheme.secondary, // Puedes usar el color de error
-          ),
-          const SizedBox(height: 16.0),
-          Text(
-            "Sin conexión a Internet",
-
-            style: TextStyle(
-              fontSize: 18,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(
-                0.7,
-              ), // Color de texto semi-transparente
-            ),
-          ),
-          const SizedBox(height: 16.0),
-          ElevatedButton(
-            onPressed: () {
-              // Intenta reconfirmar conexión y cargar datos
-              _initConnectivity().then((_) {
-                if (_isConnected) {
-                  // Si después de verificar hay conexión, intenta cargar
-                  _fetchSerieDetailsData();
-                } else {
-                  // Opcional: Mostrar un mensaje temporal si sigue sin conexión
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Aún sin conexión. Intenta de nuevo.'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                }
-              });
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.white60),
-            child: const Text("Reintentar"),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -184,7 +133,15 @@ class _SerieDetailsScreenState extends State<SerieDetailsScreen> {
                     // Asegúrate de que _serieDetailsFuture no sea null aquí si quieres mostrar carga
                     // Podría ser null si la conexión se perdió y el future se limpió.
                     if (_serieDetailsFuture == null) {
-                      return _buildNoConnectionWidget(); // Si el future es null, muestra no conectado
+                      return NoConnectionWidget(
+                        onRetry: () {
+                          _initConnectivity().then((_) {
+                            if (_isConnected) {
+                              _fetchSerieDetailsData(); // Asegúrate de tener esta función disponible
+                            }
+                          });
+                        },
+                      ); // Si el future es null, muestra no conectado
                     }
                     return const Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
@@ -204,7 +161,15 @@ class _SerieDetailsScreenState extends State<SerieDetailsScreen> {
                     // o si el future completó sin datos (aunque nuestra API siempre devuelve content/seasons o error).
                     // Si _serieDetailsFuture se puso a null al perder conexión, esto lo captura.
                     if (!_isConnected) {
-                      return _buildNoConnectionWidget();
+                      return NoConnectionWidget(
+                        onRetry: () {
+                          _initConnectivity().then((_) {
+                            if (_isConnected) {
+                              _fetchSerieDetailsData(); // Asegúrate de tener esta función disponible
+                            }
+                          });
+                        },
+                      );
                     }
                     // Si hasData es false *con* conexión, es un caso inesperado o API sin datos.
                     return const Center(
@@ -220,26 +185,27 @@ class _SerieDetailsScreenState extends State<SerieDetailsScreen> {
                       padding: const EdgeInsets.all(16.0),
                       children: [
                         // --- Sección de Contenido General ---
-                        if (content.contentCover.isNotEmpty)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8.0),
-                            child: Image.network(
-                              content.contentCover,
-                              fit: BoxFit.contain,
-                              height: 300,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  height: 300,
-                                  color: Colors.grey[300],
-                                  child: Icon(
-                                    Icons.broken_image,
-                                    size: 50,
-                                    color: Colors.grey[600],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
+                        // if (content.contentCover.isNotEmpty)
+                        //   ClipRRect(
+                        //     borderRadius: BorderRadius.circular(8.0),
+                        //     child: Image.network(
+                        //       content.contentCover,
+                        //       fit: BoxFit.contain,
+                        //       height: 300,
+                        //       errorBuilder: (context, error, stackTrace) {
+                        //         return Container(
+                        //           height: 300,
+                        //           color: Colors.grey[300],
+                        //           child: Icon(
+                        //             Icons.broken_image,
+                        //             size: 50,
+                        //             color: Colors.grey[600],
+                        //           ),
+                        //         );
+                        //       },
+                        //     ),
+                        //   ),
+                        buildSerieCover(content.contentCover),
                         const SizedBox(height: 16.0),
                         Text(
                           content.contentTitle,
@@ -291,7 +257,7 @@ class _SerieDetailsScreenState extends State<SerieDetailsScreen> {
                                               'Episodio ${episode.episodeNumber}: ${episode.episodeName}',
                                             ),
                                             onTap: () {
-                                              // TODO: Implementar la reproducción del episodio
+                                              //  Implementar la reproducción del episodio
                                               // print(
                                               //   'Reproducir: ${episode.episodeUrl}',
                                               // );
@@ -301,12 +267,14 @@ class _SerieDetailsScreenState extends State<SerieDetailsScreen> {
                                                 context,
                                                 MaterialPageRoute(
                                                   builder:
-                                                      (context) =>
-                                                          ChewiePlayerScreen(
-                                                            videoUrl:
-                                                                episode
-                                                                    .episodeUrl,
-                                                          ),
+                                                      (
+                                                        context,
+                                                      ) => ChewiePlayerScreen(
+                                                        videoUrl:
+                                                            episode.episodeUrl,
+                                                        name:
+                                                            ' ${content.contentTitle}: ${episode.episodeName}',
+                                                      ),
                                                 ),
                                               );
                                             },
@@ -322,7 +290,15 @@ class _SerieDetailsScreenState extends State<SerieDetailsScreen> {
                 },
               )
               // Si NO HAY conexión, muestra el widget de "Sin conexión"
-              : _buildNoConnectionWidget(),
+              : NoConnectionWidget(
+                onRetry: () {
+                  _initConnectivity().then((_) {
+                    if (_isConnected) {
+                      _fetchSerieDetailsData(); // Asegúrate de tener esta función disponible
+                    }
+                  });
+                },
+              ),
     );
   }
 }

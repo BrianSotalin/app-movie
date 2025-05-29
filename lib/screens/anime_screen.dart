@@ -2,10 +2,13 @@ import 'dart:async'; // Para StreamSubscription
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart'; // Import connectivity_plus
 import 'dart:io'; // Import for SocketException
-
+import '../shared/widget/no_connection_widget.dart';
 import '../models/content_model.dart';
 import '../services/content_service.dart';
 import '../screens/serie_details_screen.dart'; // Assuming SerieDetailsScreen can display any Content type
+import '../models/gender_model.dart';
+import '../services/gender_service.dart';
+import '../shared/widget/detail_card.dart';
 
 class AnimeScreen extends StatefulWidget {
   const AnimeScreen({super.key});
@@ -24,15 +27,7 @@ class _AnimeScreenState extends State<AnimeScreen> {
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   final Connectivity _connectivity = Connectivity();
 
-  final List<String> _categories = [
-    'ALL',
-    'FAMILIAR',
-    'DRAMA',
-    'ACCION',
-    'TERROR',
-    'COMEDIA',
-    'AVENTURA',
-  ];
+  List<Gender> _categories = [];
 
   @override
   void initState() {
@@ -49,6 +44,7 @@ class _AnimeScreenState extends State<AnimeScreen> {
     // Si no, _moviesFuture podría quedar sin inicializar hasta que haya conexión.
     // Es mejor inicializarlo aquí con una función que dependa de _isConnected.
     if (_isConnected) {
+      _fetchCategories();
       _fetchAnimeData();
     } else {
       // Si no hay conexión al inicio, _moviesFuture puede ser un futuro que ya completó con error
@@ -132,6 +128,18 @@ class _AnimeScreenState extends State<AnimeScreen> {
     });
   }
 
+  //metodo para cargar generos
+  void _fetchCategories() async {
+    try {
+      final genders = await GenderService().fetchGenders();
+      setState(() {
+        _categories = [Gender(id: 0, name: 'ALL'), ...genders];
+      });
+    } catch (e) {
+      // Puedes mostrar un mensaje o dejar la lista vacía
+    }
+  }
+
   /// Filters the anime based on the current search query and selected category.
   void _filterAnime() {
     setState(() {
@@ -148,47 +156,68 @@ class _AnimeScreenState extends State<AnimeScreen> {
     });
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final sortedCategories = [..._categories]
+      ..sort((a, b) => a.name.compareTo(b.name));
+    final abcCategories =
+        _categories.where((category) {
+            if (_selectedCategory == 'ALL') {
+              return category.name != 'ALL';
+            }
+            return category.name == _selectedCategory;
+          }).toList()
+          ..sort(
+            (a, b) => a.name.compareTo(b.name),
+          ); // <-- esta es la línea clave
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Anime'),
+        actions: [
+          PopupMenuButton(
+            icon: const Icon(Icons.more_vert),
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem(
+                    enabled: false,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Filtrar por género',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButton<String>(
+                          value: _selectedCategory,
+                          isExpanded: true,
+                          items:
+                              sortedCategories.map((gender) {
+                                return DropdownMenuItem<String>(
+                                  value: gender.name,
+                                  child: Text(gender.name),
+                                );
+                              }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                _selectedCategory = newValue;
 
-  Widget _buildNoConnectionWidget() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Icon(
-            Icons.wifi_off, // Logo de no wifi
-            size: 80,
-            color: Theme.of(context).colorScheme.secondary,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Sin conexión a Internet', // Mensaje
-            style: TextStyle(
-              fontSize: 18,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // Intenta recargar los datos o verificar la conexión de nuevo
-              _initConnectivity().then((_) {
-                if (_isConnected) {
-                  _fetchAnimeData();
-                }
-              });
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.white60),
-            child: const Text('Reintentar'),
+                                Navigator.pop(context); // Cierra el menú
+                                _filterAnime(); // Aplica el filtro
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
           ),
         ],
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Anime')),
       body:
           _isConnected // Check connectivity status here
               ? FutureBuilder<List<Content>>(
@@ -206,7 +235,15 @@ class _AnimeScreenState extends State<AnimeScreen> {
                     if (errorString.contains('socketeexception') ||
                         errorString.contains('failed host lookup') ||
                         errorString.contains('sin conexión')) {
-                      return _buildNoConnectionWidget(); // Show no connection widget if network error
+                      return NoConnectionWidget(
+                        onRetry: () {
+                          _initConnectivity().then((_) {
+                            if (_isConnected) {
+                              _fetchAnimeData(); // Asegúrate de tener esta función disponible
+                            }
+                          });
+                        },
+                      );
                     }
                     // For other types of errors, display a generic error message
                     return Center(
@@ -268,70 +305,7 @@ class _AnimeScreenState extends State<AnimeScreen> {
                             },
                           ),
                         ),
-                        SizedBox(
-                          height: 40,
-                          child: SingleChildScrollView(
-                            // Changed to SingleChildScrollView with Row
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children:
-                                  _categories.map((category) {
-                                    final isSelected =
-                                        _selectedCategory == category;
-                                    return GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedCategory = category;
-                                          _filterAnime();
-                                        });
-                                      },
-                                      child: Container(
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color:
-                                              isSelected
-                                                  ? Theme.of(
-                                                    context,
-                                                  ).colorScheme.primary
-                                                  : Theme.of(
-                                                    context,
-                                                  ).colorScheme.secondary,
-                                          borderRadius: BorderRadius.circular(
-                                            15,
-                                          ),
-                                          boxShadow: [
-                                            if (isSelected)
-                                              const BoxShadow(
-                                                color: Colors.black26,
-                                                blurRadius: 4,
-                                                offset: Offset(0, 2),
-                                              ),
-                                          ],
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            category,
-                                            style: TextStyle(
-                                              color:
-                                                  isSelected
-                                                      ? Colors.white
-                                                      : Colors.black87,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                            ),
-                          ),
-                        ),
+
                         const SizedBox(height: 8),
                         Expanded(
                           child:
@@ -344,25 +318,23 @@ class _AnimeScreenState extends State<AnimeScreen> {
                                   )
                                   : ListView(
                                     children:
-                                        _categories
-                                            .where(
-                                              (category) =>
-                                                  _selectedCategory == 'ALL' ||
-                                                  _selectedCategory == category,
-                                            )
+                                        abcCategories
+                                            .where((category) {
+                                              // Si está seleccionado 'ALL', mostramos todas las categorías (excepto 'ALL' misma si existe)
+                                              if (_selectedCategory == 'ALL') {
+                                                return category.name != 'ALL';
+                                              }
+                                              // Solo mostrar la categoría seleccionada
+                                              return category.name ==
+                                                  _selectedCategory;
+                                            })
                                             .map((category) {
                                               final animeInCategory =
                                                   _filteredAnime
                                                       .where(
-                                                        (anime) =>
-                                                            _selectedCategory ==
-                                                                    'ALL'
-                                                                ? anime.gender
-                                                                        .toUpperCase() ==
-                                                                    category
-                                                                : anime.gender
-                                                                        .toUpperCase() ==
-                                                                    _selectedCategory,
+                                                        (movie) =>
+                                                            movie.gender ==
+                                                            category.name,
                                                       )
                                                       .toList();
 
@@ -382,7 +354,8 @@ class _AnimeScreenState extends State<AnimeScreen> {
                                                         ),
                                                     child: Text(
                                                       _selectedCategory == 'ALL'
-                                                          ? category // Show category name if ALL is selected
+                                                          ? category
+                                                              .name // Show category name if ALL is selected
                                                           : _selectedCategory, // Show specific category title
                                                       style:
                                                           Theme.of(context)
@@ -404,7 +377,11 @@ class _AnimeScreenState extends State<AnimeScreen> {
                                                       ) {
                                                         final anime =
                                                             animeInCategory[index];
-                                                        return GestureDetector(
+                                                        return DetailCard(
+                                                          title: anime.title,
+                                                          coverUrl: anime.cover,
+                                                          gender: anime.gender,
+                                                          year: '${anime.year}',
                                                           onTap: () {
                                                             Navigator.push(
                                                               context,
@@ -420,135 +397,6 @@ class _AnimeScreenState extends State<AnimeScreen> {
                                                               ),
                                                             );
                                                           },
-                                                          child: Container(
-                                                            width: 140,
-                                                            margin:
-                                                                const EdgeInsets.symmetric(
-                                                                  horizontal: 8,
-                                                                ),
-                                                            child: Stack(
-                                                              children: [
-                                                                ClipRRect(
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        16,
-                                                                      ),
-                                                                  child: Image.network(
-                                                                    anime.cover,
-                                                                    width:
-                                                                        double
-                                                                            .infinity,
-                                                                    height:
-                                                                        double
-                                                                            .infinity,
-                                                                    fit:
-                                                                        BoxFit
-                                                                            .cover,
-                                                                    errorBuilder: (
-                                                                      BuildContext
-                                                                      context,
-                                                                      Object
-                                                                      error,
-                                                                      StackTrace?
-                                                                      stackTrace,
-                                                                    ) {
-                                                                      return Container(
-                                                                        color:
-                                                                            Colors.grey[800],
-                                                                        child: const Center(
-                                                                          child: Icon(
-                                                                            Icons.broken_image, // Changed to broken_image icon
-                                                                            color:
-                                                                                Colors.white70,
-                                                                            size:
-                                                                                40,
-                                                                          ),
-                                                                        ),
-                                                                      );
-                                                                    },
-                                                                    loadingBuilder: (
-                                                                      BuildContext
-                                                                      context,
-                                                                      Widget
-                                                                      child,
-                                                                      ImageChunkEvent?
-                                                                      loadingProgress,
-                                                                    ) {
-                                                                      if (loadingProgress ==
-                                                                          null)
-                                                                        return child;
-                                                                      return Center(
-                                                                        child: CircularProgressIndicator(
-                                                                          value:
-                                                                              loadingProgress.expectedTotalBytes !=
-                                                                                      null
-                                                                                  ? loadingProgress.cumulativeBytesLoaded /
-                                                                                      loadingProgress.expectedTotalBytes!
-                                                                                  : null,
-                                                                          color:
-                                                                              Theme.of(
-                                                                                context,
-                                                                              ).colorScheme.secondary,
-                                                                        ),
-                                                                      );
-                                                                    },
-                                                                  ),
-                                                                ),
-                                                                Positioned(
-                                                                  bottom: 0,
-                                                                  left: 0,
-                                                                  right: 0,
-                                                                  child: Container(
-                                                                    decoration: const BoxDecoration(
-                                                                      color:
-                                                                          Colors
-                                                                              .black54,
-                                                                      borderRadius: BorderRadius.vertical(
-                                                                        bottom:
-                                                                            Radius.circular(
-                                                                              16,
-                                                                            ),
-                                                                      ),
-                                                                    ),
-                                                                    padding:
-                                                                        const EdgeInsets.all(
-                                                                          8,
-                                                                        ),
-                                                                    child: Column(
-                                                                      crossAxisAlignment:
-                                                                          CrossAxisAlignment
-                                                                              .start,
-                                                                      children: [
-                                                                        Text(
-                                                                          anime
-                                                                              .title,
-                                                                          style: const TextStyle(
-                                                                            color:
-                                                                                Colors.white,
-                                                                            fontWeight:
-                                                                                FontWeight.bold,
-                                                                          ),
-                                                                          maxLines:
-                                                                              1,
-                                                                          overflow:
-                                                                              TextOverflow.ellipsis,
-                                                                        ),
-                                                                        Text(
-                                                                          '${anime.gender} • ${anime.year}',
-                                                                          style: const TextStyle(
-                                                                            color:
-                                                                                Colors.white70,
-                                                                            fontSize:
-                                                                                12,
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
                                                         );
                                                       },
                                                     ),
@@ -564,7 +412,15 @@ class _AnimeScreenState extends State<AnimeScreen> {
                   );
                 },
               )
-              : _buildNoConnectionWidget(), // Show "No connection" widget
+              : NoConnectionWidget(
+                onRetry: () {
+                  _initConnectivity().then((_) {
+                    if (_isConnected) {
+                      _fetchAnimeData(); // Asegúrate de tener esta función disponible
+                    }
+                  });
+                },
+              ), // Show "No connection" widget
     );
   }
 }
