@@ -257,12 +257,6 @@ class _SerieDetailsScreenState extends State<SerieDetailsScreen> {
                                               'Episodio ${episode.episodeNumber}: ${episode.episodeName}',
                                             ),
                                             onTap: () {
-                                              //  Implementar la reproducción del episodio
-                                              // print(
-                                              //   'Reproducir: ${episode.episodeUrl}',
-                                              // );
-                                              // Asegúrate de verificar la conexión antes de intentar reproducir también
-                                              // if(_isConnected) { /* reproducir */ } else { /* mostrar mensaje */ }
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
@@ -274,6 +268,9 @@ class _SerieDetailsScreenState extends State<SerieDetailsScreen> {
                                                             episode.episodeUrl,
                                                         name:
                                                             ' ${content.contentTitle}: ${episode.episodeName}',
+                                                        imgUrl:
+                                                            content
+                                                                .contentCover,
                                                       ),
                                                 ),
                                               );

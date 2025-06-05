@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
+import '../helpers/cast_screen.dart';
 
 class ChewiePlayerScreen extends StatefulWidget {
   final String videoUrl;
   final String name;
+  final String imgUrl;
 
   const ChewiePlayerScreen({
     super.key,
     required this.videoUrl,
     required this.name,
+    required this.imgUrl,
   });
 
   @override
@@ -49,7 +52,32 @@ class _ChewiePlayerScreenState extends State<ChewiePlayerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.name)),
+      appBar: AppBar(
+        title: Text(widget.name),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.cast),
+            onPressed: () async {
+              // Pausar el video antes de abrir la pantalla Cast
+              if (_videoPlayerController.value.isPlaying) {
+                await _videoPlayerController.pause();
+              }
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => CastScreen(
+                        videoUrl: widget.videoUrl,
+                        name: widget.name,
+                        imgUrl: widget.imgUrl,
+                      ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: Center(
         child:
             _chewieController != null &&

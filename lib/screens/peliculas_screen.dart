@@ -387,9 +387,15 @@ class _PeliculasScreenState extends State<PeliculasScreen> {
                                                                       videoUrl:
                                                                           movie
                                                                               .url,
+                                                                      // videoUrl:
+                                                                      //     'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
                                                                       name:
                                                                           movie
                                                                               .title,
+                                                                      //
+                                                                      imgUrl:
+                                                                          movie
+                                                                              .cover,
                                                                     ),
                                                               ),
                                                             );

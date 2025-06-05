@@ -39,6 +39,12 @@ dependencies:
   chewie: ^1.7.4
   connectivity_plus: ^6.0.3
   flutter_launcher_icons: "^0.13.1" 
+  cast: ^2.1.0
+  permission_handler: ^11.0.0
+  bonsoir: ^5.1.11
+
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
