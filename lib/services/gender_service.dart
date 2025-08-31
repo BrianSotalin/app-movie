@@ -1,10 +1,11 @@
 import 'dart:convert';
+import 'package:bee_movies/screens/helpers/base_url.dart';
 import 'package:http/http.dart' as http;
 import '../models/gender_model.dart';
 
 class GenderService {
   Future<List<Gender>> fetchGenders() async {
-    final url = Uri.parse('https://peliculas.between-bytes.tech/api/v1/gender');
+    final url = Uri.parse('$baseUrl/gender');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {

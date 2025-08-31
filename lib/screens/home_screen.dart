@@ -1,3 +1,4 @@
+import 'package:bee_movies/shared/widget/panel.dart';
 import 'package:flutter/material.dart';
 import 'peliculas_screen.dart';
 import 'series_screen.dart';
@@ -18,26 +19,9 @@ class _HomeScreenState extends State<HomeScreen> {
     PeliculasScreen(),
     SeriesScreen(),
     AnimeScreen(),
+    AppPanelDrawer(),
   ];
 
-  // @override
-  // Widget build(BuildContext context) {
-  //   return Scaffold(
-  //     body: IndexedStack(index: currentIndex, children: _screens),
-  //     bottomNavigationBar: BottomNavigationBar(
-  //       currentIndex: currentIndex,
-  //       onTap: (index) => setState(() => currentIndex = index),
-  //       items: const [
-  //         BottomNavigationBarItem(icon: Icon(Icons.movie), label: 'Películas'),
-  //         BottomNavigationBarItem(icon: Icon(Icons.live_tv), label: 'Series'),
-  //         BottomNavigationBarItem(
-  //           icon: Icon(Icons.emoji_emotions),
-  //           label: 'Anime',
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,6 +59,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   BottomNavigationBarItem(
                     icon: Icon(Icons.emoji_emotions),
                     label: 'Anime',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.settings),
+                    label: 'Menu',
                   ),
                 ],
               ),

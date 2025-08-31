@@ -1,13 +1,13 @@
 import 'dart:convert';
+import 'package:bee_movies/screens/helpers/base_url.dart';
 import 'package:http/http.dart' as http;
 import '../models/serie_models.dart'; // Importa tus modelos
 
 class SerieService {
-  final String baseUrl =
-      "https://peliculas.between-bytes.tech/api/v1/content/full_content";
-
   Future<SerieFullDetails> getSerieDetails(int serieId) async {
-    final url = Uri.parse('$baseUrl/$serieId'); // Construye la URL completa
+    final url = Uri.parse(
+      '$baseUrl/content/full_content/$serieId',
+    ); // Construye la URL completa
 
     try {
       final response = await http.get(url);

@@ -147,32 +147,7 @@ class _CastScreenState extends State<CastScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
-          // if (connectedDeviceName != null)
-          //   ElevatedButton.icon(
-          //     icon: Icon(Icons.cancel),
-          //     label: Text('Desconectar'),
-          //     style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          //     onPressed: () async {
-          //       try {
-          //         await CastSessionManager().endSession(
-          //           _currentSession!.sessionId,
-          //         );
-          //         setState(() {
-          //           connectedDeviceName = null;
-          //           _currentSession = null;
-          //           _mediaSent = false;
-          //         });
 
-          //         ScaffoldMessenger.of(context).showSnackBar(
-          //           SnackBar(content: Text('🔌 Desconectado del dispositivo')),
-          //         );
-          //       } catch (e) {
-          //         ScaffoldMessenger.of(context).showSnackBar(
-          //           SnackBar(content: Text('Error al desconectar: $e')),
-          //         );
-          //       }
-          //     },
-          //   ),
           if (connectedDeviceName == null)
             Expanded(
               child: FutureBuilder<List<CastDevice>>(
