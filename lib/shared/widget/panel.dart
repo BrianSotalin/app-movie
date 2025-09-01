@@ -203,7 +203,7 @@ class AppPanelDrawer extends StatelessWidget {
       child: FilledButton.icon(
         onPressed: onTap,
         style: FilledButton.styleFrom(
-          backgroundColor: Color.fromARGB(255, 120, 225, 110),
+          backgroundColor: Color(0xFFA2CA8E),
           foregroundColor: Color(0xFFFFFFFF),
           shape: const StadiumBorder(),
         ),
