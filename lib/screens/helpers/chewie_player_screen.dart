@@ -64,6 +64,7 @@ class _ChewiePlayerScreenState extends State<ChewiePlayerScreen> {
               }
 
               Navigator.push(
+                // ignore: use_build_context_synchronously
                 context,
                 MaterialPageRoute(
                   builder:

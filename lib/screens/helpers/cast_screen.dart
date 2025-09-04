@@ -101,7 +101,9 @@ class _CastScreenState extends State<CastScreen> {
                                     _currentSession = null;
                                     _mediaSent = false;
                                   });
+                                  // ignore: use_build_context_synchronously
                                   Navigator.pop(context); // Cierra el modal
+                                  // ignore: use_build_context_synchronously
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
@@ -110,6 +112,7 @@ class _CastScreenState extends State<CastScreen> {
                                     ),
                                   );
                                 } catch (e) {
+                                  // ignore: use_build_context_synchronously
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text('Error al desconectar: $e'),
@@ -200,6 +203,7 @@ class _CastScreenState extends State<CastScreen> {
         });
 
         ScaffoldMessenger.of(
+          // ignore: use_build_context_synchronously
           context,
         ).showSnackBar(SnackBar(content: Text('✅ Conectado a ${device.name}')));
       }
@@ -208,7 +212,7 @@ class _CastScreenState extends State<CastScreen> {
     session.messageStream.listen((message) {
       // print('🔁 Mensaje recibido: $message');
 
-      if (message is Map && message['type'] == 'RECEIVER_STATUS') {
+      if (message['type'] == 'RECEIVER_STATUS') {
         final applications = message['status']?['applications'];
         if (applications != null && applications.isNotEmpty) {
           final appId = applications.first['appId'];

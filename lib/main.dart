@@ -8,9 +8,8 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // 🎨 Definición de colores globales
-  static const Color primaryColor = Color(0xFF0A181D); // Fondo
-  static const Color secondaryColor = Color(0xFFA1CB8E); // Texto
+  static const Color primaryColor = Color(0xFF0A181D);
+  static const Color secondaryColor = Color(0xFFA1CB8E);
 
   @override
   Widget build(BuildContext context) {

@@ -1,15 +1,7 @@
-import 'package:bee_movies/screens/home_screen.dart';
+import 'package:bee_movies/shared/widget/modal/modal_add_movie.dart';
+import 'package:bee_movies/shared/widget/modal/modal_login.dart';
 import 'package:flutter/material.dart';
 
-/// Úsalo así en tu Scaffold:
-/// drawer: AppPanelDrawer(
-///   onAddMovie: () {},
-///   onAddSeries: () {},
-///   onAddAnime: () {},
-///   onChangeLanguage: () {},
-///   onToggleTheme: () {},
-///   onLogout: () {},
-/// )
 class AppPanelDrawer extends StatelessWidget {
   final VoidCallback? onAddMovie;
   final VoidCallback? onAddSeries;
@@ -35,10 +27,52 @@ class AppPanelDrawer extends StatelessWidget {
     this.languageFlag = '🇪🇸',
   });
 
+  Future<void> _openAddMovieDialog(BuildContext context) async {
+    // 1) Cierra el drawer
+    Navigator.of(context).pop();
+
+    // 2) Espera al siguiente frame para abrir el modal de forma segura
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!context.mounted) return; // 👈 evita usar context si se desmontó
+
+      final result = await showDialog<MovieFormData>(
+        context: context,
+        useRootNavigator: true,
+        barrierDismissible: false,
+        builder: (_) => const ModalAddMovie(),
+      );
+
+      if (!context.mounted) return;
+
+      if (result != null) {
+        // Maneja el resultado si hace falta
+      }
+    });
+  }
+
+  Future<void> _openLoginDialog(BuildContext context) async {
+    // Cierra el Drawer primero
+    Navigator.of(context).pop();
+
+    // Abre el modal de login en el siguiente frame (evita el warning de context)
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!context.mounted) return;
+
+      final result = await showDialog<LoginFormData>(
+        context: context,
+        useRootNavigator: true,
+        barrierDismissible: false, // se cierra solo con X o botón
+        builder: (_) => const ModalLogin(),
+      );
+
+      if (!context.mounted) return;
+
+      if (result != null) {}
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    //final iconColor = color ?? Theme.of(context).colorScheme.secondary;
-
     const bg = Color(0xFF111425);
 
     return Drawer(
@@ -49,34 +83,20 @@ class AppPanelDrawer extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header
-              Row(
-                children: [
-                  const Text(
-                    'Between\nBytes\nSoftware',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      height: 1,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const HomeScreen()),
-                      );
-                    },
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
-                ],
+              // Header (sin botón X)
+              const Text(
+                'Between\nBytes\nSoftware',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  height: 1,
+                  letterSpacing: 1.2,
+                ),
               ),
 
-              // Botones (Home/About opcionales de ejemplo)
-              const SizedBox(height: 10),
+              const SizedBox(height: 16),
+
               _pillFilled(
                 'About',
                 Icons.info_outline,
@@ -87,7 +107,7 @@ class AppPanelDrawer extends StatelessWidget {
               _pillFilled(
                 'Add Movie',
                 Icons.movie,
-                onTap: () => onAddMovie?.call(),
+                onTap: () => _openAddMovieDialog(context),
               ),
               const SizedBox(height: 10),
               _pillFilled(
@@ -134,12 +154,12 @@ class AppPanelDrawer extends StatelessWidget {
               const Center(
                 child: Text(
                   'Follow US',
-                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                  style: TextStyle(color: Color(0xB3FFFFFF), fontSize: 16),
                 ),
               ),
               const SizedBox(height: 12),
 
-              // Lista de personas con redes
+              // Lista
               Expanded(
                 child: ListView(
                   padding: EdgeInsets.zero,
@@ -168,24 +188,27 @@ class AppPanelDrawer extends StatelessWidget {
               ),
 
               const SizedBox(height: 8),
-              Center(
-                child: Text(
-                  'Version $versionText',
-                  style: const TextStyle(color: Color(0xFFFFFFFF)),
-                ),
+              Text(
+                'Version $versionText',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFFFFFFFF)),
               ),
               const SizedBox(height: 12),
 
-              // Logout
               SizedBox(
                 height: 44,
                 child: FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: Color(0xFFE53935),
+                    backgroundColor: const Color(
+                      0xFFA2CA8E,
+                    ), // verde para Login (opcional)
                     shape: const StadiumBorder(),
                   ),
-                  onPressed: () => onLogout?.call(),
-                  child: const Text('Logout'),
+                  onPressed: () => _openLoginDialog(context),
+                  child: const Text(
+                    'LOGIN',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ],
@@ -203,8 +226,8 @@ class AppPanelDrawer extends StatelessWidget {
       child: FilledButton.icon(
         onPressed: onTap,
         style: FilledButton.styleFrom(
-          backgroundColor: Color(0xFFA2CA8E),
-          foregroundColor: Color(0xFFFFFFFF),
+          backgroundColor: const Color(0xFFA2CA8E),
+          foregroundColor: const Color(0xFFFFFFFF),
           shape: const StadiumBorder(),
         ),
         icon: Icon(icon),
@@ -265,7 +288,7 @@ class _PersonSocial extends StatelessWidget {
                     (i) => Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: InkResponse(
-                        onTap: () {}, // aquí pegas links/acciones reales
+                        onTap: () {}, // pega links reales aquí
                         radius: 18,
                         child: Container(
                           width: 32,
