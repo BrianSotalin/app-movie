@@ -1,10 +1,10 @@
 import 'dart:async'; // Para StreamSubscription
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart'; // Importa el paquete
-import '../models/movie_model.dart';
+import '../models/entity/movie.dart';
 import '../services/movie_service.dart';
 import 'helpers/chewie_player_screen.dart';
-import '../models/gender_model.dart';
+import '../models/entity/gender.dart';
 import '../services/gender_service.dart';
 import '../shared/widget/no_connection_widget.dart';
 import '../shared/widget/detail_card.dart';

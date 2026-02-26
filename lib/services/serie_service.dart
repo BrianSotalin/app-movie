@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:bee_movies/screens/helpers/base_url.dart';
 import 'package:http/http.dart' as http;
-import '../models/serie_models.dart'; // Importa tus modelos
+import '../models/dto/serieDTO.dart'; // Importa tus modelos
 
 class SerieService {
   Future<SerieFullDetails> getSerieDetails(int serieId) async {

@@ -1,6 +1,3 @@
-// import 'dart:convert';
-
-// Modelo principal que envuelve toda la respuesta
 class SerieFullDetails {
   final Content content;
   final List<Season> seasons;
@@ -18,7 +15,6 @@ class SerieFullDetails {
   }
 }
 
-// Modelo para la información general de la serie
 class Content {
   final int contentId;
   final String contentTitle;
@@ -48,7 +44,6 @@ class Content {
   }
 }
 
-// Modelo para una temporada
 class Season {
   final int seasonId;
   final String seasonName;
@@ -72,14 +67,12 @@ class Season {
   }
 }
 
-// Modelo para un episodio
 class Episode {
   final int episodeId;
   final int episodeNumber;
   final String episodeName;
   final String episodeUrl;
-  // El campo 'season' parece estar vacío en tu ejemplo JSON,
-  // pero lo incluimos por si acaso, aunque su utilidad es cuestionable aquí.
+
   final String season;
 
   Episode({
@@ -87,7 +80,7 @@ class Episode {
     required this.episodeNumber,
     required this.episodeName,
     required this.episodeUrl,
-    required this.season, // Puedes ajustar esto si no es necesario
+    required this.season,
   });
 
   factory Episode.fromJson(Map<String, dynamic> json) {
@@ -96,7 +89,7 @@ class Episode {
       episodeNumber: json['episode_number'],
       episodeName: json['episode_name'],
       episodeUrl: json['episode_url'],
-      season: json['season'] ?? '', // Usar ?? '' para manejar posibles nulos
+      season: json['season'] ?? '',
     );
   }
 }

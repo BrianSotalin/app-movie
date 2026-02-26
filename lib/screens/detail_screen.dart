@@ -1,7 +1,7 @@
 import 'dart:async'; // Para StreamSubscription
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart'; // Importa el paquete
-import '../models/serie_models.dart'; // Importa tus modelos
+import '../models/dto/serieDTO.dart'; // Importa tus modelos
 import '../services/serie_service.dart'; // Importa tu servicio
 import 'helpers/chewie_player_screen.dart';
 import '../shared/widget/no_connection_widget.dart';

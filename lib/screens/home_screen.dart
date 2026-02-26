@@ -1,7 +1,7 @@
 import 'package:bee_movies/shared/widget/panel.dart';
 import 'package:flutter/material.dart';
-import 'peliculas_screen.dart';
-import 'series_screen.dart';
+import 'movie_screen.dart';
+import 'serie_screen.dart';
 import 'anime_screen.dart';
 import 'dart:ui';
 

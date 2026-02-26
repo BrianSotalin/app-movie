@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bee_movies/models/gender_model.dart';
+import 'package:bee_movies/models/entity/gender.dart';
 
 class PopupFilterMenu extends StatefulWidget {
   final List<Gender> categories;

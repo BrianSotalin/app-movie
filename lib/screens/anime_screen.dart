@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart'; // Import connectivity_plus
 import 'dart:io'; // Import for SocketException
 import '../shared/widget/no_connection_widget.dart';
-import '../models/content_model.dart';
+import '../models/entity/content.dart';
 import '../services/content_service.dart';
-import '../screens/serie_details_screen.dart'; // Assuming SerieDetailsScreen can display any Content type
-import '../models/gender_model.dart';
+import 'detail_screen.dart'; // Assuming SerieDetailsScreen can display any Content type
+import '../models/entity/gender.dart';
 import '../services/gender_service.dart';
 import '../shared/widget/detail_card.dart';
 import '../shared/widget/appbar_menu.dart';

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:bee_movies/screens/helpers/base_url.dart';
 import 'package:http/http.dart' as http;
-import '../models/gender_model.dart';
+import '../models/entity/gender.dart';
 
 class GenderService {
   Future<List<Gender>> fetchGenders() async {
