@@ -28,3 +28,15 @@ Sigue estos pasos para ejecutar el proyecto en tu entorno local:
 1. **Clona el repositorio:**
    ```bash
    git clone [https://github.com/BrianSotalin/app-movie.git](https://github.com/BrianSotalin/app-movie.git)
+
+2. **Obtén las dependencias:**
+   ```bash
+cd app-movie
+flutter pub get
+
+3. **Configura tu API Key:**
+Busca el archivo de configuración o provider donde se encuentra la variable _apiKey y reemplázala con tu llave personal de TMDB.
+
+Ejecuta la app:
+   ```bash
+flutter run
